@@ -2,77 +2,97 @@
  * VS Code Webview API Bridge
  *
  * Webviews run in an isolated iframe with no direct access to VS Code APIs
- * or the file system. This module provides two communication mechanisms:
+ * or the file system. This module provides communication between the
+ * webview and the VS Code extension.
  *
- * 1. State Persistence (saveState/getState)
- *    - Stores data within the webview's memory
- *    - Survives tab switches and webview hide/show cycles
- *    - Lost when VS Code restarts
- *    - Use for: UI state, editor content between tab switches
- *
- * 2. Extension Messaging (sendToExtension/onMessageFromExtension)
- *    - Sends messages to the extension backend (Node.js process)
- *    - Extension can read/write files, access VS Code APIs
- *    - Use for: Saving to disk, triggering VS Code commands
+ * Message Flow:
+ * - Extension → Webview: init (initial content), update (external changes)
+ * - Webview → Extension: contentChange (user edits)
  */
 
+// Message types from extension to webview
+export type ExtensionMessage =
+  | { type: 'init'; content: string }
+  | { type: 'update'; content: string };
+
+// Message types from webview to extension
+export type WebviewMessage =
+  | { type: 'ready' }
+  | { type: 'contentChange'; content: string };
+
 type VSCodeApi = {
-  postMessage(message: unknown): void;
-  getState(): unknown;
-  setState(state: unknown): void;
+  postMessage(message: WebviewMessage): void;
+  getState(): EditorState | undefined;
+  setState(state: EditorState): void;
+};
+
+// State persisted in webview memory (survives tab switches)
+export type EditorState = {
+  content: string;
 };
 
 declare function acquireVsCodeApi(): VSCodeApi;
 
-const isVSCode = typeof acquireVsCodeApi === "function";
+const isVSCode = typeof acquireVsCodeApi === 'function';
 
 const vscode: VSCodeApi = isVSCode
   ? acquireVsCodeApi()
   : {
-      postMessage: (_msg: unknown) => {
-        console.log("[Dev Mode] postMessage:", _msg);
+      postMessage: (msg: WebviewMessage) => {
+        console.log('[Dev Mode] postMessage:', msg);
       },
-      getState: () => ({}),
-      setState: (_state: unknown) => {
-        console.log("[Dev Mode] setState:", _state);
+      getState: () => undefined,
+      setState: (state: EditorState) => {
+        console.log('[Dev Mode] setState:', state);
       },
     };
 
 export { isVSCode };
 
 /**
- * Send a message to the VS Code extension backend.
- * The extension receives this via `webviewPanel.webview.onDidReceiveMessage()`.
+ * Tell the extension the webview is ready to receive content.
+ * Extension should send 'init' message after receiving this.
  */
-export const sendToExtension = (message: unknown): void => {
-  vscode.postMessage(message);
+export const sendReady = (): void => {
+  vscode.postMessage({ type: 'ready' });
+};
+
+/**
+ * Send content change to the VS Code extension.
+ * The extension will apply this to the TextDocument.
+ */
+export const sendContentChange = (content: string): void => {
+  vscode.postMessage({ type: 'contentChange', content });
 };
 
 /**
  * Listen for messages from the VS Code extension.
- * The extension sends these via `webviewPanel.webview.postMessage()`.
+ * Returns unsubscribe function.
  */
-export const onMessageFromExtension = (
-  callback: (message: unknown) => void
+export const onExtensionMessage = (
+  callback: (message: ExtensionMessage) => void
 ): (() => void) => {
-  const handler = (event: MessageEvent) => callback(event.data);
-  window.addEventListener("message", handler);
-  return () => window.removeEventListener("message", handler);
+  const handler = (event: MessageEvent<ExtensionMessage>): void => {
+    const message = event.data;
+    if (message && (message.type === 'init' || message.type === 'update')) {
+      callback(message);
+    }
+  };
+  window.addEventListener('message', handler);
+  return () => window.removeEventListener('message', handler);
 };
 
 /**
- * Persist state within the webview.
- * Survives when user switches tabs or hides the webview.
- * Does NOT save to disk — use sendToExtension for that.
+ * Save editor state to webview memory.
+ * Survives tab switches but not VS Code restarts.
  */
-export const saveState = (state: unknown): void => {
+export const saveEditorState = (state: EditorState): void => {
   vscode.setState(state);
 };
 
 /**
- * Retrieve previously saved webview state.
- * Returns undefined if no state was saved.
+ * Get previously saved editor state.
  */
-export const getState = (): unknown => {
+export const getEditorState = (): EditorState | undefined => {
   return vscode.getState();
 };

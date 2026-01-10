@@ -33,26 +33,40 @@
   "engines": {
     "vscode": "^1.97.0"
   },
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": [],
   "contributes": {
     "commands": [],
+    "customEditors": [
+      {
+        "viewType": "nota.markdownEditor",
+        "displayName": "Nota Markdown Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
     "configuration": {
       "type": "object",
-      "title": "ext-name",
+      "title": "Nota",
       "properties": {}
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --external vscode",
-    "dev": "nr build --watch --sourcemap",
+    "build": "pnpm build:ext && pnpm build:webview",
+    "build:ext": "tsdown src/index.ts --external vscode",
+    "build:webview": "pnpm --filter webview-ui build",
+    "dev": "concurrently -n ext,web -c blue,green \"pnpm dev:ext\" \"pnpm dev:webview\"",
+    "dev:ext": "tsdown src/index.ts --external vscode --watch --sourcemap",
+    "dev:webview": "pnpm --filter webview-ui dev",
     "prepare": "nr update",
     "update": "vscode-ext-gen --output src/generated/meta.ts",
     "lint": "eslint .",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "vscode:prepublish": "nr build",
+    "vscode:prepublish": "pnpm build",
     "release": "bumpp",
     "ext:package": "vsce package --no-dependencies",
     "ext:publish": "vsxpub --no-dependencies"
@@ -64,6 +78,7 @@
     "@types/vscode": "^1.97.0",
     "@vscode/vsce": "^3.7.1",
     "bumpp": "^10.3.2",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "ovsx": "^0.10.7",
     "reactive-vscode": "^1.0.0-beta.2",
