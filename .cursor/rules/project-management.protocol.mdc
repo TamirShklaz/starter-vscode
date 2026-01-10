@@ -1,0 +1,112 @@
+---
+alwaysApply: true
+---
+
+# PM Protocol: Project Management Workflow
+
+## Purpose
+
+Defines how AI agents interact with the project management system in the `pm/` folder.
+
+## Initialization Rules
+
+When starting a new conversation or task:
+
+1. **Check current PRD**: Look for active PRD in `pm/prds/` folder
+2. **Read PRD document**: Read the `prd.md` or `[name]-prd.md` file in the active PRD folder
+3. **Find current task**: Check `in-progress/` folder for active tasks (should typically be one)
+4. **Understand git context**:
+   - Check current branch name with `git branch --show-current`
+   - Review recent commits with `git log --oneline -10`
+   - Understand what has been implemented already
+
+## Task Management Rules
+
+### Starting a New Task
+
+1. **Select task**: Move a task from `todo/` to `in-progress/`
+2. **Create feature branch**:
+   - Branch name format: `[prd-name]/[task-name]` (e.g., `structure/implement-database`)
+   - Create with: `git checkout -b [branch-name]`
+3. **Read task file**: Understand requirements and acceptance criteria
+4. **One task at a time**: Only one task should be in `in-progress/` folder
+
+### During Task Work
+
+- **Track implementation notes**: Update task file with implementation decisions
+- **Follow existing protocols**: Apply all code, React, and writing protocols
+- **Test as you go**: Run type checking and tests after changes
+
+### Completing a Task
+
+1. **Verify acceptance criteria**: Ensure all requirements are met
+2. **Update task file**: Document what was implemented
+3. **Move to done**: Move task file from `in-progress/` to `done/`
+4. **Clean up branch**: Merge or prepare for review
+
+## Git Rules
+
+### CRITICAL: Never Auto-Commit
+
+- **NEVER run `git commit` without explicit user request**
+- **NEVER run `git push` without explicit user request**
+- Wait for explicit instructions like "commit", "git commit", or "push these changes"
+
+### Branch Management
+
+- Each task gets its own branch
+- Branch from `main` or current feature branch as appropriate
+- Keep commits focused and meaningful when requested
+
+## Folder Structure Reference
+
+```
+pm/
+├── prds/                    # Product Requirement Documents
+│   └── [prd-name]/         # Specific PRD folder
+│       ├── prd.md          # PRD definition
+│       ├── todo/           # Planned tasks (*.md files)
+│       ├── in-progress/    # Active task (single *.md file)
+│       ├── done/           # Completed tasks (*.md files)
+│       ├── backlog/        # Future considerations
+│       └── resources/      # Supporting documents
+```
+
+## Task File Format
+
+Each task file should contain:
+- **Objective**: Clear statement of what needs to be done
+- **Acceptance Criteria**: Measurable success conditions
+- **Implementation Notes**: Added during development
+- **Files Modified**: List of changed files (added after completion)
+
+## Workflow Summary
+
+### On Conversation Start
+1. **Read this protocol first** (project-management.protocol.mdc)
+2. **Read current PRD** from `pm/prds/[active-prd]/prd.md`
+3. **Check in-progress task** in `pm/prds/[active-prd]/in-progress/`
+4. **Review git context**:
+   - Current branch: `git branch --show-current`
+   - Recent work: `git log --oneline -10`
+5. **Say "Rock and roll! I'm ready to get started"** after completing the above workflow
+
+### When Starting a New Task
+1. **Move task** from `todo/` to `in-progress/`
+2. **Wait for confirmation** before proceeding
+3. **Create branch**: `git checkout -b [prd-name]/[task-name]` (after confirmation)
+4. **Implement** following acceptance criteria
+5. **Update task file** with implementation notes
+
+### When Completing a Task
+1. **Verify** all acceptance criteria met
+2. **Document** what was implemented in task file
+3. **Move task** from `in-progress/` to `done/`
+4. **WAIT** for explicit commit/push instructions from user
+
+## Cross-References
+
+- See @.cursor/rules/code.protocol.mdc for code standards
+- See @.cursor/rules/react.protocol.mdc for React patterns
+- See @.cursor/rules/writing.protocol.mdc for documentation style
+- See @CLAUDE.md for development commands and setup

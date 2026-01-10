@@ -1,8 +1,10 @@
 shellEmulator: true
 
-trustPolicy: no-downgrade
+# Temporarily allow trust downgrades for legacy dependencies
+trustPolicy: any
 
 packages:
+  - webview-ui
   - playground
   - examples/*
 onlyBuiltDependencies:

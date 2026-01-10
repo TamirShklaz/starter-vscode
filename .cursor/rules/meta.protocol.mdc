@@ -1,0 +1,117 @@
+# Meta Protocol: How to Write and Manage Protocols
+
+## What is a Protocol?
+
+A protocol is a set of rules and preferences that AI systems should follow. It defines behavior, decision-making, and operational patterns.
+
+## Core Principles
+
+### Single Source of Truth
+
+Never duplicate information. Each rule should exist in exactly one place.
+
+### Reference, Don't Repeat
+
+Link to existing protocols instead of restating their content.
+
+### Clarity Over Completeness
+
+A clear, simple rule beats a comprehensive but complex one.
+
+## Protocol Structure
+
+````markdown
+# [Protocol Name]
+
+## Purpose
+
+One sentence describing why this protocol exists.
+
+## Rules
+
+- Specific, actionable directives
+- One rule per line
+- No ambiguity
+
+## Managing Protocols
+
+### The Inbox Protocol
+
+The `inbox.protocol.mdc` serves as a temporary staging area for new rules:
+
+1. **Add new rules** to inbox as they arise during development
+2. **Watch for patterns** - when multiple related rules accumulate
+3. **Extract to dedicated protocols** once a clear category emerges
+4. **Keep inbox clean** - it should only contain untriaged rules
+
+### Creating New Protocols
+
+1. Start in `inbox.protocol.mdc`
+2. When patterns emerge, extract to specific files
+3. Name files as `[domain].protocol.mdc`
+
+### Avoiding Duplication
+
+- Before writing a rule, check if it exists elsewhere
+- Use references: "See @.cursor/code_style.mdc for coding standards"
+- Keep cross-references updated
+
+### When to Reference vs. Inline
+
+- Reference: When a complete protocol exists elsewhere
+- Inline: When adding context-specific variations
+- Never: Duplicate existing rules
+
+## Examples
+
+### Bad: Duplication
+
+```markdown
+## Code Rules
+
+- Never use `any` type
+- Use arrow functions only
+```
+````
+
+### Good: Reference
+
+```markdown
+## Code Rules
+
+See @.cursor/code_style.mdc for TypeScript standards
+```
+
+### Good: Extension
+
+```markdown
+## API-Specific Code Rules
+
+Follow @.cursor/code_style.mdc plus:
+
+- All endpoints return standard error format
+- Use rate limiting middleware
+```
+
+## Documentation Style
+
+### No Benefit Listings
+
+Never list benefits in code comments or documentation. Documentation should be concise and matter-of-fact, explaining what things do.
+
+Benefits are for chat conversations only - they help users make decisions, but don't belong in permanent documentation.
+
+**Bad:**
+```typescript
+// Benefits:
+// - No race conditions
+// - Easy to test
+// - Reusable
+const data = useData();
+```
+
+**Good:**
+```typescript
+// Queries data when config ready (prevents race conditions)
+const data = useData();
+```

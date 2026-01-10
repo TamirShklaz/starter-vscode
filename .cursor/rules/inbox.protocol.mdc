@@ -1,0 +1,24 @@
+---
+alwaysApply: true
+---
+
+# Inbox Protocol
+
+## Untriaged Rules
+
+- Keep PRDs and tasks implementation-agnostic. Focus on high-level goals and intent, not technical solutions.
+- After completing code changes, run TypeScript compiler to check for errors: `bunx tsc --noEmit` in the relevant directory
+- Run Biome formatter after making changes: `moon :check` to check formatting, `moon :lint` to fix issues
+- NEVER commit changes unless explicitly asked by the user. Only commit when the user says "commit", "git commit", or similar explicit requests
+
+## Task Writing Guidelines
+
+When creating implementation tasks:
+- Focus on WHAT needs to be done, not HOW to implement it
+- Describe the desired behavior and acceptance criteria
+- Avoid writing full code implementations, components, or CSS
+- Code snippets should only illustrate concepts or API usage (max 10-15 lines)
+- Let the implementing AI figure out the technical details
+- Include manual verification steps for QA
+- List files that likely need modification, but don't prescribe exact changes
+- Focus on user-facing behavior and edge cases to test

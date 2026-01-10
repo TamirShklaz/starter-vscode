@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+
+# React Style Guide
+
+## Core Principle
+
+**One component per file.** Make modular, testable components where possible.
+
+## React Patterns
+
+### Component Template
+
+```tsx
+import { FC, useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+
+type ComponentNameProps = {
+  // props here
+} & { className?: string };
+
+export const ComponentName: FC<ComponentNameProps> = ({ className }) => {
+  return <div className={cn(className)}>Content</div>;
+};
+```
+
+### Import Rules
+
+- Use named imports from React: `import { useState, useEffect } from "react"`
+- Never use namespace imports: ~~`import * as React from "react"`~~
+- Prefer `useEffect` over `React.useEffect`
+- Import types separately: `import type { FC, ReactNode } from "react"`
+
+### Component Rules
+
+- Functional components only
+- No default exports
+- Props type defined inline
+- Early returns for conditional rendering

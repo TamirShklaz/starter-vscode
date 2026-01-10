@@ -1,0 +1,353 @@
+---
+alwaysApply: true
+---
+
+# Code Style Guide
+
+## Core Principles
+
+**Clarity beats cleverness.**
+
+**Functions, not classes.**
+
+**Flat beats nested.** Maximum 3 indentation levels.
+
+**Explicit types always.** No implicit returns.
+
+## Architecture Patterns
+
+### Dependency Injection
+
+Inject dependencies. Don't use globals.
+
+```typescript
+// Bad
+const saveUser = (user: User) => {
+  globalDb.save(user);  // Hidden dependency
+};
+
+// Good
+const saveUser = (db: Database) => (user: User) => {
+  db.save(user);  // Explicit dependency
+};
+```
+
+### Factory Functions
+
+Use `createX` factories. Return typed objects.
+
+```typescript
+// Bad
+class FilterEngine {
+  constructor(private config: Config) {}
+}
+
+// Good
+const createFilterEngine = (config: Config): FilterEngine => ({
+  query: async (filter: string) => {...},
+  generateSql: (filter: string) => {...}
+});
+```
+
+### Functional Composition
+
+Compose small functions. Build pipelines.
+
+```typescript
+const process = pipe(
+  parse,
+  validate,
+  transform,
+  execute
+);
+```
+
+### Pure vs Impure
+
+Separate pure logic from side effects.
+
+```typescript
+// Pure: predictable, testable
+const calculateTotal = (items: Item[]): number =>
+  items.reduce((sum, item) => sum + item.price, 0);
+
+// Impure: isolated, explicit
+const saveToDatabase = async (db: Database, data: Data): Promise<void> => {
+  await db.save(data);
+};
+```
+
+## TypeScript Rules
+
+### Type Safety
+
+Never use `any`. Use `unknown`.
+
+```typescript
+// Bad
+const process = (data: any) => data.toString();
+
+// Good
+const process = (data: unknown): string => {
+  if (typeof data === "object" && data !== null) {
+    return JSON.stringify(data);
+  }
+  return String(data);
+};
+```
+
+### Functions
+
+Arrow functions only.
+
+```typescript
+// Bad
+function calculate(x: number): number {
+  return x * 2;
+}
+
+// Good
+const calculate = (x: number): number => x * 2;
+```
+
+### Type-First Development
+
+Define types first. Then implement.
+
+```typescript
+// 1. Define the contract
+type FilterEngine = {
+  query: (filter: string) => Promise<Result[]>;
+  generateSql: (filter: string) => SqlResult;
+};
+
+// 2. Implement to match
+const createFilterEngine = (config: Config): FilterEngine => {...};
+```
+
+### Async/Await
+
+Always async/await. Never .then().
+
+```typescript
+// Bad
+api.get("/data")
+  .then(response => response.json())
+  .then(data => process(data));
+
+// Good
+const response = await api.get("/data");
+const data = await response.json();
+return process(data);
+```
+
+### Type Validation
+
+Use Zod. Never cast with `as`.
+
+```typescript
+// Bad
+const user = getData() as User;
+
+// Good
+const UserSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+const user = UserSchema.parse(getData());
+```
+
+## Code Organization
+
+### Module Structure
+
+```
+feature/
+├── index.ts          # Public API only
+├── types.ts          # Shared types
+├── handlers/         # Domain logic
+└── utils/            # Helpers
+```
+
+### File Structure
+
+One component per file.
+
+One purpose per function.
+
+Export named functions only.
+
+### Early Returns
+
+Exit early. Reduce nesting.
+
+```typescript
+// Bad
+const process = (data: Data): Result => {
+  if (data.isValid) {
+    if (data.hasPermission) {
+      return doWork(data);
+    }
+  }
+  return defaultResult;
+};
+
+// Good
+const process = (data: Data): Result => {
+  if (!data.isValid) return defaultResult;
+  if (!data.hasPermission) return defaultResult;
+
+  return doWork(data);
+};
+```
+
+## Testing
+
+### Test Structure
+
+Test behavior, not implementation.
+
+Write human-readable tests that clearly express expected behavior.
+
+Build for testability.
+
+```typescript
+// Inject dependencies for testing
+const createService = (db: Database = createTestDb()) => ({
+  getUser: (id: string) => db.query(`SELECT * FROM users WHERE id = ?`, [id])
+});
+
+// Test the behavior
+test('returns user by id', async () => {
+  const service = createService(mockDb);
+  const user = await service.getUser('123');
+  expect(user.id).toBe('123');
+});
+```
+
+### Test Readability
+
+Use GIVEN-WHEN-THEN comments to structure tests.
+
+Write test names that describe behavior, not implementation.
+
+```typescript
+test("realistic task filter produces complete spec", () => {
+  // GIVEN: Complex filter for task creation
+  const filter = createTaskFilter({
+    status: "todo",
+    priority: { gte: 5 },
+    tags: ["urgent", "bug"]
+  });
+
+  // WHEN: Generate spec
+  const spec = generateDocumentSpec(filter);
+
+  // THEN: Complete spec with all properties
+  expect(spec).toMatchObject({
+    frontmatter: {
+      status: "todo",
+      priority: 5,
+      tags: ["urgent", "bug"]
+    },
+    metadata: {
+      satisfiable: true
+    }
+  });
+});
+```
+
+### Object Comparison
+
+Use `toMatchObject` for partial object matching.
+
+Use `toEqual` for exact deep equality.
+
+Use `toContainEqual` for arrays of objects.
+
+```typescript
+// Partial matching - ignores unspecified properties
+expect(spec).toMatchObject({
+  frontmatter: { status: "todo" },
+  metadata: { satisfiable: true }
+});
+
+// Exact matching - all properties must match
+expect(spec.frontmatter).toEqual({
+  status: "todo",
+  priority: 5
+});
+
+// Array element matching with exact match
+expect(spec.warnings).toContainEqual({
+  field: "mtime",
+  category: "system-managed",
+  message: expect.stringContaining("system-managed")
+});
+
+// Array element matching with partial match
+expect(spec.warnings).toContainEqual(
+  expect.objectContaining({
+    field: "mtime",
+    category: "system-managed"
+  })
+);
+```
+
+### Test Fixtures
+
+Use deterministic data.
+
+Create in-memory databases.
+
+Isolate each test.
+
+## Error Handling
+
+Fail fast. Be specific.
+
+```typescript
+const fetchUser = async (id: string): Promise<User> => {
+  if (!id) throw new Error("User ID required");
+
+  const response = await api.get(`/users/${id}`);
+  if (!response.ok) throw new Error(`Failed to fetch user ${id}: ${response.status}`);
+
+  return UserSchema.parse(response.data);
+};
+```
+
+## Comments
+
+Write self-documenting code.
+
+Comments explain why or what, not benefits.
+
+```typescript
+// Bad - obvious
+// Increment counter
+counter++;
+
+// Bad - listing benefits
+// Benefits: faster, more maintainable, easier to test
+const processData = () => {...};
+
+// Good - explains business logic
+// AWS Lambda retry limit
+const MAX_RETRIES = 3;
+
+// Good - explains what
+// Queries files when config ready (prevents race conditions)
+const data = useStructureTableData(config);
+```
+
+Never list benefits in code or documentation. Documentation should be concise and matter-of-fact, explaining what things do.
+
+## Performance
+
+Measure first.
+
+Optimize later.
+
+Clarity beats performance.
