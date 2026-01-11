@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { FC, ChangeEvent } from 'react';
+import type { ChangeEvent, FC } from 'react'
+import type { ExtensionMessage } from '@/vscode'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { log } from '@/lib/logger'
 import {
+  getEditorState,
   isVSCode,
-  sendContentChange,
   onExtensionMessage,
   saveEditorState,
-  getEditorState,
+  sendContentChange,
   sendReady,
-} from '@/vscode';
-import type { ExtensionMessage } from '@/vscode';
-import { log } from '@/lib/logger';
+} from '@/vscode'
 
 const DEV_CONTENT = `# Welcome to Nota
 
@@ -26,83 +26,83 @@ console.log(greeting);
 \`\`\`
 
 Edit this content to test the editor.
-`;
+`
 
 // Get initial state synchronously before render
-const getInitialState = (): { content: string; isInitialized: boolean } => {
+function getInitialState(): { content: string, isInitialized: boolean } {
   // Try to restore from webview state first
-  const savedState = getEditorState();
+  const savedState = getEditorState()
   if (savedState?.content) {
-    log.debug('Restored state from webview memory', { length: savedState.content.length });
-    return { content: savedState.content, isInitialized: true };
+    log.debug('Restored state from webview memory', { length: savedState.content.length })
+    return { content: savedState.content, isInitialized: true }
   }
 
   // In dev mode, use placeholder content
   if (!isVSCode) {
-    log.debug('Dev mode: using placeholder content');
-    return { content: DEV_CONTENT, isInitialized: true };
+    log.debug('Dev mode: using placeholder content')
+    return { content: DEV_CONTENT, isInitialized: true }
   }
 
   // In VS Code, wait for init message
-  log.debug('VS Code mode: waiting for init message');
-  return { content: '', isInitialized: false };
-};
+  log.debug('VS Code mode: waiting for init message')
+  return { content: '', isInitialized: false }
+}
 
 export const App: FC = () => {
-  const initialState = useMemo(() => getInitialState(), []);
-  const [content, setContent] = useState<string>(initialState.content);
-  const [isInitialized, setIsInitialized] = useState(initialState.isInitialized);
+  const initialState = useMemo(() => getInitialState(), [])
+  const [content, setContent] = useState<string>(initialState.content)
+  const [isInitialized, setIsInitialized] = useState(initialState.isInitialized)
 
   // Track if we're receiving an update to avoid echo
-  const isReceivingUpdate = useRef(false);
+  const isReceivingUpdate = useRef(false)
 
   // Handle messages from extension
   const handleExtensionMessage = useCallback((message: ExtensionMessage): void => {
-    log.info('Received message from extension', { type: message.type, contentLength: message.content.length });
+    log.info('Received message from extension', { type: message.type, contentLength: message.content.length })
 
     if (message.type === 'init' || message.type === 'update') {
-      isReceivingUpdate.current = true;
-      setContent(message.content);
-      saveEditorState({ content: message.content });
-      setIsInitialized(true);
+      isReceivingUpdate.current = true
+      setContent(message.content)
+      saveEditorState({ content: message.content })
+      setIsInitialized(true)
 
       // Reset flag after state update
       requestAnimationFrame(() => {
-        isReceivingUpdate.current = false;
-      });
+        isReceivingUpdate.current = false
+      })
     }
-  }, []);
+  }, [])
 
   // Set up message listener and notify extension we're ready
   useEffect(() => {
-    log.info('App mounted, setting up message listener');
+    log.info('App mounted, setting up message listener')
 
-    const unsubscribe = onExtensionMessage(handleExtensionMessage);
+    const unsubscribe = onExtensionMessage(handleExtensionMessage)
 
     // Tell extension we're ready to receive content
     if (isVSCode) {
-      log.info('Sending ready signal to extension');
-      sendReady();
+      log.info('Sending ready signal to extension')
+      sendReady()
     }
 
     return () => {
-      log.debug('App unmounting, cleaning up');
-      unsubscribe();
-    };
-  }, [handleExtensionMessage]);
+      log.debug('App unmounting, cleaning up')
+      unsubscribe()
+    }
+  }, [handleExtensionMessage])
 
   // Handle user input
   const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>): void => {
-    const newContent = e.target.value;
-    setContent(newContent);
-    saveEditorState({ content: newContent });
+    const newContent = e.target.value
+    setContent(newContent)
+    saveEditorState({ content: newContent })
 
     // Only send to extension if not receiving an update (avoid loops)
     if (!isReceivingUpdate.current) {
-      log.debug('Sending content change to extension', { length: newContent.length });
-      sendContentChange(newContent);
+      log.debug('Sending content change to extension', { length: newContent.length })
+      sendContentChange(newContent)
     }
-  }, []);
+  }, [])
 
   return (
     <div className="flex flex-col h-screen w-full">
@@ -112,7 +112,9 @@ export const App: FC = () => {
           {isVSCode ? 'Nota Editor' : 'Development Mode'}
         </span>
         <span className="text-xs text-muted-foreground">
-          {content.length} characters
+          {content.length}
+          {' '}
+          characters
         </span>
       </div>
 
@@ -125,5 +127,5 @@ export const App: FC = () => {
         spellCheck={false}
       />
     </div>
-  );
-};
+  )
+}

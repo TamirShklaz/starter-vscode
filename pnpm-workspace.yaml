@@ -1,7 +1,8 @@
 shellEmulator: true
 
 # Temporarily allow trust downgrades for legacy dependencies
-trustPolicy: any
+
+trustPolicy: no-downgrade
 
 packages:
   - webview-ui
