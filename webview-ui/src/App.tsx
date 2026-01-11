@@ -1,6 +1,7 @@
-import type { ChangeEvent, FC } from 'react'
+import type { FC } from 'react'
 import type { ExtensionMessage } from '@/vscode'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BlockNoteEditor } from '@/components/BlockNoteEditor'
 import { log } from '@/lib/logger'
 import {
   getEditorState,
@@ -16,7 +17,7 @@ const DEV_CONTENT = `# Welcome to Nota
 This is a **markdown** editor running in development mode.
 
 ## Features
-- Simple textarea-based editing
+- Simple editing
 - Syncs with VS Code extension
 - Persists state across tab switches
 
@@ -28,22 +29,18 @@ console.log(greeting);
 Edit this content to test the editor.
 `
 
-// Get initial state synchronously before render
-function getInitialState(): { content: string, isInitialized: boolean } {
-  // Try to restore from webview state first
+const getInitialState = (): { content: string, isInitialized: boolean } => {
   const savedState = getEditorState()
   if (savedState?.content) {
     log.debug('Restored state from webview memory', { length: savedState.content.length })
     return { content: savedState.content, isInitialized: true }
   }
 
-  // In dev mode, use placeholder content
   if (!isVSCode) {
     log.debug('Dev mode: using placeholder content')
     return { content: DEV_CONTENT, isInitialized: true }
   }
 
-  // In VS Code, wait for init message
   log.debug('VS Code mode: waiting for init message')
   return { content: '', isInitialized: false }
 }
@@ -53,10 +50,9 @@ export const App: FC = () => {
   const [content, setContent] = useState<string>(initialState.content)
   const [isInitialized, setIsInitialized] = useState(initialState.isInitialized)
 
-  // Track if we're receiving an update to avoid echo
   const isReceivingUpdate = useRef(false)
+  const externalUpdateHandlerRef = useRef<((markdown: string) => Promise<void>) | null>(null)
 
-  // Handle messages from extension
   const handleExtensionMessage = useCallback((message: ExtensionMessage): void => {
     log.info('Received message from extension', { type: message.type, contentLength: message.content.length })
 
@@ -66,20 +62,20 @@ export const App: FC = () => {
       saveEditorState({ content: message.content })
       setIsInitialized(true)
 
-      // Reset flag after state update
+      // Forward to BlockNote editor
+      externalUpdateHandlerRef.current?.(message.content)
+
       requestAnimationFrame(() => {
         isReceivingUpdate.current = false
       })
     }
   }, [])
 
-  // Set up message listener and notify extension we're ready
   useEffect(() => {
     log.info('App mounted, setting up message listener')
 
     const unsubscribe = onExtensionMessage(handleExtensionMessage)
 
-    // Tell extension we're ready to receive content
     if (isVSCode) {
       log.info('Sending ready signal to extension')
       sendReady()
@@ -91,17 +87,28 @@ export const App: FC = () => {
     }
   }, [handleExtensionMessage])
 
-  // Handle user input
-  const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>): void => {
-    const newContent = e.target.value
+  // ============ TEXTAREA HANDLERS ============
+  // const handleTextareaChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>): void => {
+  //   const newContent = e.target.value
+  //   setContent(newContent)
+  //   saveEditorState({ content: newContent })
+
+  //   if (!isReceivingUpdate.current) {
+  //     log.debug('Sending content change to extension', { length: newContent.length })
+  //     sendContentChange(newContent)
+  //   }
+  // }, [])
+
+  // ============ BLOCKNOTE HANDLERS ============
+  const handleBlockNoteChange = useCallback((newContent: string): void => {
     setContent(newContent)
     saveEditorState({ content: newContent })
+    log.debug('Sending content change to extension', { length: newContent.length })
+    sendContentChange(newContent)
+  }, [])
 
-    // Only send to extension if not receiving an update (avoid loops)
-    if (!isReceivingUpdate.current) {
-      log.debug('Sending content change to extension', { length: newContent.length })
-      sendContentChange(newContent)
-    }
+  const handleExternalUpdate = useCallback((handler: (markdown: string) => Promise<void>): void => {
+    externalUpdateHandlerRef.current = handler
   }, [])
 
   return (
@@ -112,20 +119,32 @@ export const App: FC = () => {
           {isVSCode ? 'Nota Editor' : 'Development Mode'}
         </span>
         <span className="text-xs text-muted-foreground">
-          {content.length}
-          {' '}
-          characters
+          {content.length} characters
         </span>
       </div>
 
       {/* Editor */}
-      <textarea
-        value={content}
-        onChange={handleChange}
-        className="flex-1 w-full p-4 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
-        placeholder={isInitialized ? '' : 'Loading...'}
-        spellCheck={false}
-      />
+      {!isInitialized ? (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          Loading...
+        </div>
+      ) : (
+        // ============ TEXTAREA VERSION ============
+        // <textarea
+        //   value={content}
+        //   onChange={handleTextareaChange}
+        //   className="flex-1 w-full p-4 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
+        //   spellCheck={false}
+        // />
+
+        // ============ BLOCKNOTE VERSION ============
+        <BlockNoteEditor
+          className="flex-1 overflow-auto"
+          initialContent={content}
+          onContentChange={handleBlockNoteChange}
+          onExternalUpdate={handleExternalUpdate}
+        />
+      )}
     </div>
   )
 }

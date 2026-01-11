@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@source "../../node_modules/@blocknote/shadcn";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -26,6 +28,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -61,6 +64,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -95,6 +99,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -117,7 +122,38 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  /* BlockNote specific border styles */
+  .bn-shadcn * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* BlockNote side menu customizations (~80% of original size) */
+.bn-side-menu {
+  gap: 0 !important;
+}
+
+.bn-side-menu button.bn-button {
+  /* Override Tailwind h-9 px-4 py-2 (original: 36px) */
+  height: 29px !important;
+  min-height: 29px !important;
+  width: 29px !important;
+  min-width: 29px !important;
+  padding: 5px !important;
+}
+
+.bn-side-menu button.bn-button svg {
+  /* Override hardcoded width="24" height="24" attributes (original: 24px) */
+  width: 19px !important;
+  height: 19px !important;
+}
+
+/* BlockNote paragraph spacing */
+.bn-block-outer:has(.bn-block-content[data-content-type="paragraph"]) {
+  margin-bottom: 0.5em !important;
 }

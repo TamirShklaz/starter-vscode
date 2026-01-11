@@ -119,9 +119,16 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
     )
 
     log.debug('Asset URIs', { script: scriptUri.toString(), style: styleUri.toString() })
+    log.debug('Extension URI', { uri: this.context.extensionUri.toString() })
+    log.debug('CSP Source', { cspSource: webview.cspSource })
 
     const nonce = generateNonce()
 
+    // CSP needs to allow:
+    // - script-src: nonce for main script + cspSource for dynamically imported chunks
+    // - style-src: cspSource for stylesheets + unsafe-inline for inline styles
+    // - font-src: cspSource for font files
+    // - img-src: cspSource for images + data: for inline images
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,12 +138,23 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
           content="default-src 'none'; 
                    style-src ${webview.cspSource} 'unsafe-inline'; 
                    font-src ${webview.cspSource}; 
-                   script-src 'nonce-${nonce}';">
+                   img-src ${webview.cspSource} data:; 
+                   script-src 'nonce-${nonce}' ${webview.cspSource};">
     <link href="${styleUri}" rel="stylesheet">
     <title>Nota Editor</title>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="padding: 20px; font-family: sans-serif;">
+        <p>Loading Nota...</p>
+        <p style="font-size: 12px; color: #666;">If you see this for more than 2 seconds, JavaScript failed to load.</p>
+      </div>
+    </div>
+    <script nonce="${nonce}">
+      // Inline script to test if scripts work at all
+      console.log('[Nota] Inline script executed');
+      window.__notaScriptTest = true;
+    </script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`
