@@ -12,37 +12,54 @@ import {
   sendReady,
 } from '@/vscode'
 
-// Detect VS Code theme and sync with our dark class
-const useVSCodeTheme = (): void => {
+// Detect theme and sync with our dark class
+// In VS Code: use VS Code theme classes
+// In dev mode: use system prefers-color-scheme
+const useTheme = (): void => {
   useEffect(() => {
-    const updateTheme = (): void => {
-      const isDark = document.body.classList.contains('vscode-dark')
-        || document.body.classList.contains('vscode-high-contrast')
-      
+    const setDarkMode = (isDark: boolean): void => {
       if (isDark) {
         document.documentElement.classList.add('dark')
       }
       else {
         document.documentElement.classList.remove('dark')
       }
-      log.debug('Theme updated', { isDark })
+      log.debug('Theme updated', { isDark, isVSCode })
     }
 
-    // Initial check
-    updateTheme()
-
-    // Watch for VS Code theme changes
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.attributeName === 'class') {
-          updateTheme()
-        }
+    if (isVSCode) {
+      // VS Code mode: watch for theme class changes on body
+      const updateFromVSCode = (): void => {
+        const isDark = document.body.classList.contains('vscode-dark')
+          || document.body.classList.contains('vscode-high-contrast')
+        setDarkMode(isDark)
       }
-    })
 
-    observer.observe(document.body, { attributes: true })
+      updateFromVSCode()
 
-    return () => observer.disconnect()
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.attributeName === 'class') {
+            updateFromVSCode()
+          }
+        }
+      })
+
+      observer.observe(document.body, { attributes: true })
+      return () => observer.disconnect()
+    }
+    else {
+      // Dev mode: use system preference
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      setDarkMode(mediaQuery.matches)
+
+      const handleChange = (e: MediaQueryListEvent): void => {
+        setDarkMode(e.matches)
+      }
+
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
   }, [])
 }
 
@@ -80,7 +97,7 @@ const getInitialState = (): { content: string, isInitialized: boolean } => {
 }
 
 export const App: FC = () => {
-  useVSCodeTheme()
+  useTheme()
 
   const initialState = useMemo(() => getInitialState(), [])
   const [content, setContent] = useState<string>(initialState.content)

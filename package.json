@@ -1,24 +1,20 @@
 {
-  "publisher": "antfu",
-  "name": "ext-name",
-  "displayName": "ext-name",
-  "version": "0.0.0",
+  "publisher": "TamirShklaz",
+  "name": "nota",
+  "displayName": "Nota",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@10.27.0",
-  "description": "",
-  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "description": "A beautiful markdown editor for VS Code",
+  "author": "Tamir Shklaz",
   "license": "MIT",
-  "funding": "https://github.com/sponsors/antfu",
-  "homepage": "https://github.com/antfu/ext-name#readme",
+  "homepage": "https://github.com/TamirShklaz/nota#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antfu/ext-name"
+    "url": "https://github.com/TamirShklaz/nota"
   },
   "bugs": {
-    "url": "https://github.com/antfu/ext-name/issues"
-  },
-  "sponsor": {
-    "url": "https://github.com/sponsors/antfu"
+    "url": "https://github.com/TamirShklaz/nota/issues"
   },
   "categories": [
     "Other"
@@ -27,13 +23,15 @@
   "icon": "res/icon.png",
   "files": [
     "LICENSE.md",
-    "dist/*",
+    "dist/**/*",
     "res/*"
   ],
   "engines": {
     "vscode": "^1.97.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onCustomEditor:nota.markdownEditor"
+  ],
   "contributes": {
     "commands": [],
     "customEditors": [
@@ -68,6 +66,7 @@
     "typecheck": "tsc --noEmit",
     "vscode:prepublish": "pnpm build",
     "release": "bumpp",
+    "package": "pnpm build && vsce package --no-dependencies",
     "ext:package": "vsce package --no-dependencies",
     "ext:publish": "vsxpub --no-dependencies"
   },

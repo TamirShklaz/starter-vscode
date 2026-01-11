@@ -127,6 +127,17 @@
     @apply bg-background text-foreground;
   }
 
+  /* Hyperlink colors */
+  a,
+  .bn-shadcn .bn-editor a {
+    color: #37352f !important;
+  }
+
+  .dark a,
+  .dark .bn-shadcn .bn-editor a {
+    color: hsla(0, 0%, 100%, 0.7) !important;
+  }
+
   /* BlockNote specific border styles */
   .bn-shadcn * {
     @apply border-border outline-ring/50;
@@ -163,4 +174,22 @@
 .bn-container,
 .bn-shadcn {
   background: transparent !important;
+}
+
+/* BlockNote font size - 20% larger than VS Code's UI font size */
+.bn-default-styles {
+  font-size: calc(var(--vscode-font-size, 16px) * 1.2) !important;
+}
+
+/* Heading sizes - match Notion's sizing */
+[data-content-type="heading"][data-level="1"] {
+  --level: 1.875em !important; /* ~30px at 16px base */
+}
+
+[data-content-type="heading"][data-level="2"] {
+  --level: 1.5em !important; /* ~24px at 16px base */
+}
+
+[data-content-type="heading"][data-level="3"] {
+  --level: 1.25em !important; /* ~20px at 16px base */
 }
