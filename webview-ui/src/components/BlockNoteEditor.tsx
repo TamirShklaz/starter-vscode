@@ -184,39 +184,36 @@ export const BlockNoteEditor: FC<BlockNoteEditorProps> = ({
   log.info('BlockNoteEditor about to render BlockNoteView')
 
   return (
-    <div className={`blocknote-editor-container flex-1 w-full ${className ?? ''}`}>
-      <div className="max-w-[900px] mx-auto px-4">
-        <BlockNoteView
-          editor={editor}
-          onChange={handleChange}
-          formattingToolbar={false}
-          sideMenu={false}
-        >
-        <FormattingToolbarController
-          formattingToolbar={() => (
-            <FormattingToolbar>
-              <BlockTypeSelect key="blockTypeSelect" />
+    <BlockNoteView
+      editor={editor}
+      onChange={handleChange}
+      formattingToolbar={false}
+      sideMenu={false}
+      className={className}
+    >
+      <FormattingToolbarController
+        formattingToolbar={() => (
+          <FormattingToolbar>
+            <BlockTypeSelect key="blockTypeSelect" />
 
-              <BasicTextStyleButton basicTextStyle="bold" key="bold" />
-              <BasicTextStyleButton basicTextStyle="italic" key="italic" />
-              <BasicTextStyleButton basicTextStyle="strike" key="strike" />
-              <BasicTextStyleButton basicTextStyle="code" key="code" />
+            <BasicTextStyleButton basicTextStyle="bold" key="bold" />
+            <BasicTextStyleButton basicTextStyle="italic" key="italic" />
+            <BasicTextStyleButton basicTextStyle="strike" key="strike" />
+            <BasicTextStyleButton basicTextStyle="code" key="code" />
 
-              <NestBlockButton key="nest" />
-              <UnnestBlockButton key="unnest" />
+            <NestBlockButton key="nest" />
+            <UnnestBlockButton key="unnest" />
 
-              <CreateLinkButton key="link" />
-            </FormattingToolbar>
-          )}
-        />
+            <CreateLinkButton key="link" />
+          </FormattingToolbar>
+        )}
+      />
 
-        <SideMenuController
-          sideMenu={props => (
-            <SideMenu {...props} dragHandleMenu={MarkdownDragHandleMenu} />
-          )}
-        />
-        </BlockNoteView>
-      </div>
-    </div>
+      <SideMenuController
+        sideMenu={props => (
+          <SideMenu {...props} dragHandleMenu={MarkdownDragHandleMenu} />
+        )}
+      />
+    </BlockNoteView>
   )
 }

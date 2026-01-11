@@ -157,3 +157,10 @@
 .bn-block-outer:has(.bn-block-content[data-content-type="paragraph"]) {
   margin-bottom: 0.5em !important;
 }
+
+/* BlockNote background - match app background */
+.bn-editor,
+.bn-container,
+.bn-shadcn {
+  background: transparent !important;
+}

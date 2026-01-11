@@ -12,6 +12,40 @@ import {
   sendReady,
 } from '@/vscode'
 
+// Detect VS Code theme and sync with our dark class
+const useVSCodeTheme = (): void => {
+  useEffect(() => {
+    const updateTheme = (): void => {
+      const isDark = document.body.classList.contains('vscode-dark')
+        || document.body.classList.contains('vscode-high-contrast')
+      
+      if (isDark) {
+        document.documentElement.classList.add('dark')
+      }
+      else {
+        document.documentElement.classList.remove('dark')
+      }
+      log.debug('Theme updated', { isDark })
+    }
+
+    // Initial check
+    updateTheme()
+
+    // Watch for VS Code theme changes
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          updateTheme()
+        }
+      }
+    })
+
+    observer.observe(document.body, { attributes: true })
+
+    return () => observer.disconnect()
+  }, [])
+}
+
 const DEV_CONTENT = `# Welcome to Nota
 
 This is a **markdown** editor running in development mode.
@@ -46,6 +80,8 @@ const getInitialState = (): { content: string, isInitialized: boolean } => {
 }
 
 export const App: FC = () => {
+  useVSCodeTheme()
+
   const initialState = useMemo(() => getInitialState(), [])
   const [content, setContent] = useState<string>(initialState.content)
   const [isInitialized, setIsInitialized] = useState(initialState.isInitialized)
@@ -112,39 +148,20 @@ export const App: FC = () => {
   }, [])
 
   return (
-    <div className="flex flex-col h-screen w-full">
-      {/* Status bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/50">
-        <span className="text-sm text-muted-foreground">
-          {isVSCode ? 'Nota Editor' : 'Development Mode'}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {content.length} characters
-        </span>
+    <div className="h-screen w-full overflow-auto">
+      <div className="max-w-[900px] mx-auto px-4 py-8">
+        {!isInitialized ? (
+          <div className="flex items-center justify-center text-muted-foreground h-32">
+            Loading...
+          </div>
+        ) : (
+          <BlockNoteEditor
+            initialContent={content}
+            onContentChange={handleBlockNoteChange}
+            onExternalUpdate={handleExternalUpdate}
+          />
+        )}
       </div>
-
-      {/* Editor */}
-      {!isInitialized ? (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </div>
-      ) : (
-        // ============ TEXTAREA VERSION ============
-        // <textarea
-        //   value={content}
-        //   onChange={handleTextareaChange}
-        //   className="flex-1 w-full p-4 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
-        //   spellCheck={false}
-        // />
-
-        // ============ BLOCKNOTE VERSION ============
-        <BlockNoteEditor
-          className="flex-1 overflow-auto"
-          initialContent={content}
-          onContentChange={handleBlockNoteChange}
-          onExternalUpdate={handleExternalUpdate}
-        />
-      )}
     </div>
   )
 }
